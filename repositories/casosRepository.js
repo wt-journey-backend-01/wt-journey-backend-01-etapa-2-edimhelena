@@ -45,7 +45,7 @@ const atualizarCaso = (id, titulo, descricao, status, agente_id) => {
     return caso
 }
 
-const atualizarCasoParcialmente = (titulo, descricao, status, agente_id) => {
+const atualizarCasoParcialmente = (id, titulo, descricao, status, agente_id) => {
     const caso = casos.find(c => c.id === id);
 
     if (!caso) {

@@ -12,7 +12,7 @@ const getAgentes = (req, res, next) => {
     try {
         const agentes = agentesRepository.findAll();
 
-        res.status(200).json(agentes)
+        return res.status(200).json(agentes)
     }
     catch (error) {
         next(error)
@@ -27,7 +27,7 @@ const getAgentesById = (req, res, next) => {
         return next(new APIError(404, `Agente ${id} não encontrado`))
     }
 
-    res.status(200).json(agente)
+    return res.status(200).json(agente)
 }
 
 const criarAgente = (req, res, next) => {
@@ -53,7 +53,7 @@ const criarAgente = (req, res, next) => {
 
         const newAgente = agentesRepository.cadastrarAgente(nome, dataDeIncorporacao, cargo);
 
-        res.status(201).json(newAgente)
+        return res.status(201).json(newAgente)
     }
     catch (error) {
         next(error)
@@ -82,7 +82,7 @@ const atualizarAgente = (req, res, next) => {
             return next(new APIError(400, `Data de incorporação deve estar no formato YYYY-MM-DD`))
         }
 
-        const agenteExiste = agentesRepository.findById();
+        const agenteExiste = agentesRepository.findById(id);
 
         if (!agenteExiste) {
             return next(new APIError(404, `Agente ${id} não encontrado`))
@@ -97,21 +97,28 @@ const atualizarAgente = (req, res, next) => {
 }
 
 const atualizarAgenteParcialmente = (req, res, next) => {
-    try{
+    try {
         const id = req.params.id
         const { nome, dataDeIncorporacao, cargo } = req.body
 
         const agenteExiste = agentesRepository.findById(id)
 
-        if(!agenteExiste){
+        if (!agenteExiste) {
             return next(new APIError(404, `Agente ${id} não encontrado`))
         }
 
-        const agenteAtualizado = agentesRepository.atualizarAgenteParcialmente(nome, dataDeIncorporacao, cargo)
+        if (dataDeIncorporacao) {
+            const formatoValido = /^\d{4}-\d{2}-\d{2}$/.test(dataDeIncorporacao)
+            if (!formatoValido) {
+                return next(new APIError(400, `Data de incorporação deve estar no formato YYYY-MM-DD`))
+            }
+        }
+
+        const agenteAtualizado = agentesRepository.atualizarAgenteParcialmente(id, nome, dataDeIncorporacao, cargo)
 
         return res.status(200).json(agenteAtualizado)
     }
-    catch(error){
+    catch (error) {
         next(error)
     }
 }
@@ -124,7 +131,7 @@ const deletarAgente = (req, res, next) => {
             return next(new APIError(404, `O agente ${id} não foi encontrado`))
         }
         agentesRepository.deletarAgente(indexAgente)
-        res.status(204).send();
+        return res.status(204).send();
     }
     catch (error) {
         next(error)
