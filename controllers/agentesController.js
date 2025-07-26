@@ -116,6 +116,18 @@ const atualizarAgente = (req, res, next) => {
 
 const atualizarAgenteParcialmente = (req, res, next) => {
     try {
+        const allowedFields = ['nome', 'dataDeIncorporacao', 'cargo'];
+        const fieldsToUpdate = Object.keys(req.body);
+
+        if (fieldsToUpdate.length === 0) {
+            return next(new APIError(400, "Nenhum campo para atualizar foi enviado."));
+        }
+
+        const invalidFields = fieldsToUpdate.filter(field => !allowedFields.includes(field));
+        if (invalidFields.length > 0) {
+            return next(new APIError(400, `Campos inválidos no payload: ${invalidFields.join(', ')}`));
+        }
+
         const id = req.params.id
         const { nome, dataDeIncorporacao, cargo } = req.body
 
