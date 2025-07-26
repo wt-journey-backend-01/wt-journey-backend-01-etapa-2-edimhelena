@@ -1,171 +1,145 @@
 <sup>Esse é um feedback gerado por IA, ele pode conter erros.</sup>
 
-Você tem 7 créditos restantes para usar o sistema de feedback AI.
+Você tem 6 créditos restantes para usar o sistema de feedback AI.
 
 # Feedback para edimhelena:
 
 Nota final: **97.7/100**
 
-Olá, edimhelena! 👋🚀
+Olá, edimhelena! 👋✨
 
-Primeiramente, parabéns pelo esforço e pela qualidade do seu código! 🎉 Você construiu uma API para o Departamento de Polícia com uma estrutura bem organizada, seguindo a arquitetura modular com rotas, controllers e repositories. Isso é fundamental para um projeto escalável e fácil de manter. Além disso, você implementou corretamente os métodos HTTP essenciais (GET, POST, PUT, PATCH, DELETE) para os recursos `/agentes` e `/casos`, e fez um ótimo trabalho com validações e tratamento de erros! 👏
+Primeiramente, parabéns pelo seu empenho e pelo excelente trabalho entregue! 🎉 Sua API para o Departamento de Polícia está muito bem estruturada, e eu adorei ver que você implementou todos os métodos HTTP para os recursos `/agentes` e `/casos` com uma organização clara em rotas, controllers e repositories — isso mostra que você domina a arquitetura modular, o que é fundamental para projetos escaláveis. 👏
 
----
-
-## O que você mandou muito bem! 🌟
-
-- A organização do seu projeto está impecável, seguindo o padrão esperado com pastas bem definidas (`routes/`, `controllers/`, `repositories/`, `utils/`, etc.).
-- Seus controllers estão fazendo um tratamento cuidadoso dos dados, validando campos obrigatórios e formatos, como a data de incorporação dos agentes e os status dos casos.
-- Você implementou filtros simples na rota `/casos` para buscar por `agente_id` e `status`, o que é um bônus muito legal e mostra domínio do assunto.
-- O uso do middleware de tratamento de erros (`errorHandler`) está correto, o que ajuda a centralizar a gestão dos erros da API.
-- Parabéns também pela atenção aos status HTTP corretos (201 para criação, 204 para deleção, 400 para erros de validação, 404 para recursos não encontrados).
+Além disso, você mandou super bem nas validações e no tratamento de erros, garantindo que a API responda com os status HTTP corretos e mensagens amigáveis. Isso é crucial para que clientes da API saibam exatamente o que está acontecendo. Também quero destacar que você conseguiu implementar os filtros básicos para os casos (por status e agente), o que é um bônus muito legal e mostra seu interesse em ir além do básico! 🚀
 
 ---
 
-## Um ponto para ajustar: Atualização parcial de agentes com PATCH 🚧
+### Agora, vamos conversar sobre um ponto que ainda pode ser melhorado para deixar sua API impecável? 🕵️‍♂️🔍
 
-Eu percebi que o único teste base que não passou está relacionado ao endpoint de atualização parcial de agentes (`PATCH /agentes/:id`), especificamente quando o payload está em formato incorreto. Isso indica que, talvez, seu código não esteja validando corretamente algumas situações de payload inválido ao atualizar parcialmente um agente.
+#### 1. Atualização Parcial de Agentes com PATCH e Payload Incorreto
 
-Dando uma olhada no seu método `atualizarAgenteParcialmente` no arquivo `controllers/agentesController.js`, você fez validações muito boas para os campos `nome`, `dataDeIncorporacao` e `cargo`, mas pode estar faltando um pouco de rigor para detectar formatos errados ou tipos inválidos.
+Eu percebi que o teste relacionado a atualizar parcialmente um agente com o método PATCH, enviando um payload em formato incorreto, não está respondendo com o status 400 como esperado. Isso indica que sua validação para o PATCH no endpoint `/agentes/:id` não está cobrindo todos os casos de payload inválido.
 
-Por exemplo, veja este trecho:
-
-```js
-if(nome && nome === ""){
-    return next(new APIError(400, `Nome não pode ser vazio`))
-}
-
-if(cargo && cargo === ""){
-    return next(new APIError(400, `Cargo não pode ser vazio`))
-}
-
-if (dataDeIncorporacao) {
-    if(dataDeIncorporacao === ""){
-        return next(new APIError(400, `Data de incorporação não pode ser vazia`))
-    }
-
-    const formatoValido = /^\d{4}-\d{2}-\d{2}$/.test(dataDeIncorporacao)
-    if (!formatoValido) {
-        return next(new APIError(400, `Data de incorporação deve estar no formato YYYY-MM-DD`))
-    }
-
-    const now = new Date();
-    const dataToDate = new Date(dataDeIncorporacao)
-
-    if (dataToDate > now) {
-        return next(new APIError(400, "A data de incorporação deve ser uma data válida."));
-    }
-}
-```
-
-Aqui, você valida se os campos estão vazios e se a data está no formato correto, o que é ótimo! Porém, pode ser que o erro esteja em casos onde o campo enviado no corpo da requisição não é uma string, ou está com um tipo inesperado (como um número, um objeto vazio, etc). Isso pode causar falha na validação do regex e não ser capturado adequadamente no seu código.
-
-**Sugestão:** Antes de testar o formato ou o valor, garanta que o campo é do tipo esperado (string). Por exemplo:
+Olhando seu código no `agentesController.js`, na função `atualizarAgenteParcialmente`, você já tem validações para os campos `nome`, `dataDeIncorporacao` e `cargo`, mas a validação está condicionada a verificar se o campo existe e se é uma string não vazia, o que é ótimo:
 
 ```js
 if (nome !== undefined && (typeof nome !== 'string' || nome.trim() === "")) {
     return next(new APIError(400, `Nome deve ser uma string não vazia`));
 }
+```
 
-if (cargo !== undefined && (typeof cargo !== 'string' || cargo.trim() === "")) {
-    return next(new APIError(400, `Cargo deve ser uma string não vazia`));
+Porém, o problema está na forma como você trata os campos que não são strings (por exemplo, se o cliente enviar um número ou um objeto no lugar do nome). Você cobre isso, mas não verifica se o corpo da requisição está vazio ou contém campos não esperados.
+
+**Por que isso é importante?**
+
+Se o cliente enviar um payload vazio (`{}`) ou com campos extras que não fazem parte do modelo, sua API deveria responder com erro 400, pois não há nada para atualizar ou o payload está mal formado.
+
+**Como melhorar?**
+
+Uma forma simples é verificar se o corpo da requisição tem pelo menos um dos campos esperados para atualização e que eles estejam no formato correto. Se não, retorne erro 400.
+
+Exemplo de ajuste no começo da função `atualizarAgenteParcialmente`:
+
+```js
+const allowedFields = ['nome', 'dataDeIncorporacao', 'cargo'];
+const fieldsToUpdate = Object.keys(req.body);
+
+if (fieldsToUpdate.length === 0) {
+    return next(new APIError(400, "Nenhum campo para atualizar foi enviado."));
 }
 
-if (dataDeIncorporacao !== undefined) {
-    if (typeof dataDeIncorporacao !== 'string' || dataDeIncorporacao.trim() === "") {
-        return next(new APIError(400, `Data de incorporação deve ser uma string no formato YYYY-MM-DD`));
-    }
-
-    const formatoValido = /^\d{4}-\d{2}-\d{2}$/.test(dataDeIncorporacao);
-    if (!formatoValido) {
-        return next(new APIError(400, `Data de incorporação deve estar no formato YYYY-MM-DD`));
-    }
-
-    const now = new Date();
-    const dataToDate = new Date(dataDeIncorporacao);
-
-    if (dataToDate > now) {
-        return next(new APIError(400, "A data de incorporação deve ser uma data válida."));
-    }
+const invalidFields = fieldsToUpdate.filter(field => !allowedFields.includes(field));
+if (invalidFields.length > 0) {
+    return next(new APIError(400, `Campos inválidos no payload: ${invalidFields.join(', ')}`));
 }
 ```
 
-Esse ajuste ajuda a garantir que o payload está no formato correto e evita erros inesperados na validação.
+Assim, você garante que o cliente envie ao menos um campo válido e não tente atualizar campos proibidos ou enviar payload vazio.
+
+Além disso, você pode reforçar as validações individuais para garantir que o tipo e o formato estejam corretos.
 
 ---
 
-## Sobre os testes bônus que não passaram — você está no caminho certo! 🚀
+### 2. Sobre os Bônus que Ainda Podem Ser Explorados
 
-Você implementou filtros simples para casos por status e agente, que é um diferencial excelente! 👏
+Você já implementou filtros básicos para casos por status e agente, o que é excelente! 🎯
 
-Porém, alguns filtros mais avançados e mensagens de erro customizadas ainda não foram implementados, como:
+No entanto, notei que ainda não há implementação para:
 
-- Busca do agente responsável por um caso diretamente via endpoint.
-- Filtragem de casos por palavras-chave no título e/ou descrição.
-- Filtragem e ordenação de agentes por data de incorporação.
-- Mensagens de erro customizadas para argumentos inválidos.
+- Buscar o agente responsável por um caso diretamente via endpoint.
+- Filtrar casos por palavras-chave no título e/ou descrição.
+- Filtrar agentes pela data de incorporação com ordenação crescente e decrescente.
+- Mensagens de erro customizadas para argumentos inválidos em agentes e casos.
 
-Essas funcionalidades extras são ótimas para deixar sua API mais robusta e amigável. Se quiser dar um upgrade, recomendo explorar como manipular query params para esses filtros e como criar mensagens de erro mais detalhadas para o cliente.
+Esses são recursos avançados que agregam muito valor à API, deixando-a mais robusta e amigável.
 
----
+Se quiser, posso te dar uma dica rápida para começar a implementar a filtragem por data de incorporação com ordenação em agentes, que é um bônus muito interessante:
 
-## Organização do projeto e boas práticas 👍
+```js
+const getAgentes = (req, res, next) => {
+    try {
+        let agentes = agentesRepository.findAll();
 
-Sua estrutura está exatamente como esperado:
+        const { dataIncorporacao, sort } = req.query;
 
+        if (dataIncorporacao) {
+            agentes = agentes.filter(a => a.dataDeIncorporacao === dataIncorporacao);
+        }
+
+        if (sort === 'asc') {
+            agentes.sort((a, b) => new Date(a.dataDeIncorporacao) - new Date(b.dataDeIncorporacao));
+        } else if (sort === 'desc') {
+            agentes.sort((a, b) => new Date(b.dataDeIncorporacao) - new Date(a.dataDeIncorporacao));
+        }
+
+        return res.status(200).json(agentes);
+    } catch (error) {
+        next(error);
+    }
+};
 ```
-.
-├── controllers/
-│   ├── agentesController.js
-│   └── casosController.js
-├── repositories/
-│   ├── agentesRepository.js
-│   └── casosRepository.js
-├── routes/
-│   ├── agentesRoutes.js
-│   └── casosRoutes.js
-├── utils/
-│   └── errorHandler.js
-├── server.js
-├── package.json
-└── docs/
-    └── swagger.js
-```
 
-Manter essa estrutura limpa e modular é essencial para projetos mais complexos, e você já está aplicando isso muito bem! Continue assim! 💪
+Essa abordagem permite filtrar e ordenar os agentes conforme a data de incorporação, usando query params. É uma funcionalidade que melhora bastante a usabilidade da API.
 
 ---
 
-## Recursos para você aprofundar e aprimorar ainda mais sua API
+### 3. Sobre a Estrutura do Projeto
 
-- Para reforçar a validação e tratamento de erros, recomendo este vídeo que mostra como validar dados em APIs Node.js/Express e tratar erros com status HTTP corretos:  
-  https://youtu.be/yNDCRAz7CM8?si=Lh5u3j27j_a4w3A_
+Sua estrutura de diretórios está ótima e segue o padrão esperado, com pastas separadas para `routes`, `controllers`, `repositories` e `utils`. Isso facilita muito a manutenção e a escalabilidade do projeto. 👌
 
-- Para entender melhor como trabalhar com rotas e middlewares no Express, veja a documentação oficial:  
-  https://expressjs.com/pt-br/guide/routing.html
-
-- Para aprofundar na manipulação de arrays (como você faz ao filtrar casos e agentes), este vídeo é excelente:  
-  https://youtu.be/glSgUKA5LjE?si=t9G2NsC8InYAU9cI
-
-- E, claro, para revisar os fundamentos de API REST e Express.js, este vídeo é um ótimo ponto de partida:  
-  https://youtu.be/RSZHvQomeKE
+Só fique atento para manter essa organização conforme o projeto cresce, sempre separando responsabilidades e evitando que arquivos fiquem muito grandes.
 
 ---
 
-## Resumo Rápido para Focar 🎯
+### 4. Recomendações de Estudo para Você 🚀
 
-- **Reforce a validação no PATCH de agentes** para garantir que os dados enviados são do tipo e formato corretos, evitando erros com payloads mal formados.
-- **Implemente filtros avançados e mensagens de erro customizadas** para melhorar a usabilidade da API (filtros por keywords, agente responsável, ordenação, etc).
-- **Continue mantendo a estrutura modular e organizada** do projeto, isso é um super diferencial.
-- **Aprofunde-se em validação e tratamento de erros HTTP** para deixar sua API mais robusta e confiável.
+Para ajudar a aprimorar sua validação e tratamento de erros, recomendo fortemente que você assista este vídeo que explica como validar dados em APIs Node.js/Express e construir respostas de erro claras:
+
+- [Validação de dados em APIs Node.js/Express](https://youtu.be/yNDCRAz7CM8?si=Lh5u3j27j_a4w3A_)
+
+Também vale a pena revisar o funcionamento do roteamento no Express para garantir que suas rotas estejam sempre corretas e bem definidas:
+
+- [Documentação oficial do Express sobre roteamento](https://expressjs.com/pt-br/guide/routing.html)
+
+E para entender melhor como manipular arrays de forma eficiente no JavaScript (útil para filtros, buscas e ordenações):
+
+- [Métodos de array no JavaScript](https://youtu.be/glSgUKA5LjE?si=t9G2NsC8InYAU9cI)
 
 ---
 
-Edimhelena, você está indo muito bem! 🚀 Seu código está limpo, organizado e funcional na maior parte. Com esses pequenos ajustes na validação e um toque extra nos filtros e mensagens, sua API vai ficar ainda mais profissional e completa. Continue nessa pegada, você está construindo uma base sólida para projetos futuros! 💜
+### Resumo Rápido dos Pontos para Focar:
 
-Se precisar, estarei aqui para ajudar! 👨‍💻✨
+- ✅ Continue com a ótima organização do projeto em rotas, controllers e repositories.
+- ⚠️ Refine a validação do payload no método PATCH para atualização parcial de agentes, garantindo que payloads vazios ou com campos inválidos retornem erro 400.
+- ⚠️ Implemente validações para evitar campos extras ou payloads mal formados em atualizações parciais.
+- 🌟 Explore os bônus que faltam, como filtragem avançada e mensagens de erro customizadas, para deixar sua API ainda mais completa.
+- 🎯 Continue estudando validação de dados, tratamento de erros e manipulação de arrays para aprimorar suas habilidades.
 
-Abraços e bons códigos! 👊😊
+---
+
+edimhelena, você está no caminho certo e já entregou um trabalho muito sólido! 💪✨ Com esses ajustes, sua API vai ficar ainda mais robusta e profissional. Continue assim, sempre curioso(a) e disposto(a) a aprender! Qualquer dúvida que surgir, pode contar comigo! 🤗🚀
+
+Um abraço e até a próxima revisão! 👋😊
 
 > Caso queira tirar uma dúvida específica, entre em contato com o Chapter no nosso [discord](https://discord.gg/DryuHVnz).
 
