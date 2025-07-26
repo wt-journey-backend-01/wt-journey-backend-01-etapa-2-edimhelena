@@ -13,6 +13,42 @@ const getCasos = (req, res, next) => {
     try {
         const casos = repository.findAll();
 
+        const { agente_id, status } = req.query
+
+        if (agente_id) {
+            const casosAgente = casos.filter(c => c.agente_id === agente_id)
+
+            if (casosAgente.length === 0) {
+                return next(new APIError(404, 'Esse agente não possui nenhum caso registrado.'))
+            }
+
+            return res.status(200).json(casosAgente)
+        }
+
+        if (status) {
+            if (status === 'aberto') {
+                let casosAbertos = casos.filter(c => c.status === 'aberto')
+
+                if (casosAbertos.length === 0) {
+                    return next(new APIError(404, "Nenhum caso aberto foi encontrado."))
+                }
+
+                return res.status(200).json(casosAbertos)
+            }
+            else if (status === 'solucionado') {
+                let casosSolucionados = casos.filter(c => c.status === 'solucionado')
+
+                if (casosSolucionados.length === 0) {
+                    return next(new APIError(404, "Nenhum caso solucionado foi encontrado."))
+                }
+
+                return res.status(200).json(casosSolucionados)
+            }
+            else {
+                return next(new APIError(400, "O campo 'status' pode ser somente 'aberto' ou 'solucionado'."))
+            }
+        }
+
         return res.status(200).json(casos)
     }
     catch (error) {
@@ -39,12 +75,12 @@ const getCasosById = (req, res, next) => {
 const criarCaso = (req, res, next) => {
     try {
         let { titulo } = req.body
-        if (!titulo) {
+        if (!titulo || titulo === "") {
             return next(new APIError(400, `Título é obrigatório`))
         }
 
         let { descricao } = req.body
-        if (!descricao) {
+        if (!descricao || descricao === "") {
             return next(new APIError(400, `Descrição é obrigatória`))
         }
 
@@ -77,21 +113,29 @@ const atualizarCaso = (req, res, next) => {
         let id = req.params.id;
         let { titulo, descricao, status, agente_id } = req.body;
 
+        if ('id' in req.body) {
+            return next(new APIError(400, "Você não pode alterar o campo 'id'."));
+        }
+
         let caso = repository.findById(id);
         if (!caso) {
             return next(new APIError(404, `O caso ${id} não foi encontrado`))
         }
 
-        if (!titulo) {
+        if (!titulo || titulo === "") {
             return next(new APIError(400, `Título é obrigatório`))
         }
 
-        if (!descricao) {
+        if (!descricao || descricao === "") {
             return next(new APIError(400, `Descrição é obrigatória`))
         }
 
         if (status !== "aberto" && status !== "solucionado") {
             return next(new APIError(400, `Status deve ser 'aberto' ou 'solucionado'`))
+        }
+
+        if (status === "") {
+            return next(new APIError(400, `Status não pode ser vazio`))
         }
 
         if (!agente_id) {
@@ -116,14 +160,33 @@ const atualizarCasoParcialmente = (req, res, next) => {
     try {
         let id = req.params.id;
         let caso = repository.findById(id);
+
+
+
+        if ('id' in req.body) {
+            return next(new APIError(400, "Você não pode alterar o campo 'id'."));
+        }
+
         if (!caso) {
             return next(new APIError(404, `O caso ${id} não foi encontrado`))
         }
 
         let { titulo, descricao, status, agente_id } = req.body;
 
+        if (titulo && titulo === "") {
+            return next(new APIError(400, `Título não pode ser vazio`))
+        }
+
+        if (descricao && descricao === "") {
+            return next(new APIError(400, `Descrição não pode ser vazia`))
+        }
+
         if (status && status !== "aberto" && status !== "solucionado") {
             return next(new APIError(400, `Status deve ser 'aberto' ou 'solucionado'`))
+        }
+
+        if (status && status === "") {
+            return next(new APIError(400, `Status não pode ser vazio`))
         }
 
         if (agente_id && !agentesRepository.findById(agente_id)) {

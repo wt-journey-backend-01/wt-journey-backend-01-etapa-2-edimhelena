@@ -34,21 +34,28 @@ const criarAgente = (req, res, next) => {
     try {
         const { nome, dataDeIncorporacao, cargo } = req.body
 
-        if (!nome) {
+        if (!nome || nome === "") {
             return next(new APIError(400, `Nome é obrigatório`))
         }
 
-        if (!dataDeIncorporacao) {
+        if (!dataDeIncorporacao || dataDeIncorporacao === "") {
             return next(new APIError(400, `A data de incorporação é obrigatória`))
         }
 
-        if (!cargo) {
+        if (!cargo || cargo === "") {
             return next(new APIError(400, `Cargo é obrigatório`))
         }
 
         const formatoValido = /^\d{4}-\d{2}-\d{2}$/.test(dataDeIncorporacao)
         if (!formatoValido) {
             return next(new APIError(400, `Data de incorporação deve estar no formato YYYY-MM-DD`))
+        }
+
+        const now = new Date();
+        const dataToDate = new Date(dataDeIncorporacao)
+
+        if (dataToDate > now) {
+            return next(new APIError(400, "A data de incorporação deve ser uma data válida."));
         }
 
         const newAgente = agentesRepository.cadastrarAgente(nome, dataDeIncorporacao, cargo);
@@ -65,21 +72,32 @@ const atualizarAgente = (req, res, next) => {
         const id = req.params.id
         const { nome, dataDeIncorporacao, cargo } = req.body
 
-        if (!nome) {
+        if ('id' in req.body) {
+            return next(new APIError(400, "Você não pode alterar o campo 'id'."));
+        }
+
+        if (!nome || nome === "") {
             return next(new APIError(400, `Nome é obrigatório`))
         }
 
-        if (!dataDeIncorporacao) {
+        if (!dataDeIncorporacao || dataDeIncorporacao === "") {
             return next(new APIError(400, `A data de incorporação é obrigatória`))
         }
 
-        if (!cargo) {
+        if (!cargo || cargo === "") {
             return next(new APIError(400, `Cargo é obrigatório`))
         }
 
         const formatoValido = /^\d{4}-\d{2}-\d{2}$/.test(dataDeIncorporacao)
         if (!formatoValido) {
             return next(new APIError(400, `Data de incorporação deve estar no formato YYYY-MM-DD`))
+        }
+
+        const now = new Date();
+        const dataToDate = new Date(dataDeIncorporacao)
+
+        if (dataToDate > now) {
+            return next(new APIError(400, "A data de incorporação deve ser uma data válida."));
         }
 
         const agenteExiste = agentesRepository.findById(id);
@@ -101,16 +119,39 @@ const atualizarAgenteParcialmente = (req, res, next) => {
         const id = req.params.id
         const { nome, dataDeIncorporacao, cargo } = req.body
 
+        if ('id' in req.body) {
+            return next(new APIError(400, "Você não pode alterar o campo 'id'."));
+        }
+
         const agenteExiste = agentesRepository.findById(id)
 
         if (!agenteExiste) {
             return next(new APIError(404, `Agente ${id} não encontrado`))
         }
 
+        if(nome && nome === ""){
+            return next(new APIError(400, `Nome não pode ser vazio`))
+        }
+
+        if(cargo && cargo === ""){
+            return next(new APIError(400, `Cargo não pode ser vazio`))
+        }
+
         if (dataDeIncorporacao) {
+            if(dataDeIncorporacao === ""){
+                return next(new APIError(400, `Data de incorporação não pode ser vazia`))
+            }
+
             const formatoValido = /^\d{4}-\d{2}-\d{2}$/.test(dataDeIncorporacao)
             if (!formatoValido) {
                 return next(new APIError(400, `Data de incorporação deve estar no formato YYYY-MM-DD`))
+            }
+
+            const now = new Date();
+            const dataToDate = new Date(dataDeIncorporacao)
+
+            if (dataToDate > now) {
+                return next(new APIError(400, "A data de incorporação deve ser uma data válida."));
             }
         }
 
