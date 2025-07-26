@@ -119,42 +119,41 @@ const atualizarCaso = (req, res, next) => {
 
         let caso = repository.findById(id);
         if (!caso) {
-            return next(new APIError(404, `O caso ${id} não foi encontrado`))
+            return next(new APIError(404, `O caso ${id} não foi encontrado`));
         }
 
-        if (!titulo || titulo === "") {
-            return next(new APIError(400, `Título é obrigatório`))
+        if (typeof titulo !== 'string' || titulo.trim() === '') {
+            return next(new APIError(400, `Título é obrigatório e deve ser uma string não vazia`));
         }
 
-        if (!descricao || descricao === "") {
-            return next(new APIError(400, `Descrição é obrigatória`))
+        if (typeof descricao !== 'string' || descricao.trim() === '') {
+            return next(new APIError(400, `Descrição é obrigatória e deve ser uma string não vazia`));
         }
 
+        if (typeof status !== 'string' || status.trim() === '') {
+            return next(new APIError(400, `Status é obrigatório e deve ser uma string não vazia`));
+        }
         if (status !== "aberto" && status !== "solucionado") {
-            return next(new APIError(400, `Status deve ser 'aberto' ou 'solucionado'`))
+            return next(new APIError(400, `Status deve ser 'aberto' ou 'solucionado'`));
         }
 
-        if (status === "") {
-            return next(new APIError(400, `Status não pode ser vazio`))
-        }
-
-        if (!agente_id) {
-            return next(new APIError(400, `ID do agente é obrigatório`))
+        if (agente_id === undefined || agente_id === null || agente_id === '') {
+            return next(new APIError(400, `ID do agente é obrigatório`));
         }
 
         const agenteExiste = agentesRepository.findById(agente_id);
         if (!agenteExiste) {
-            return next(new APIError(404, 'Agente não encontrado'))
+            return next(new APIError(404, 'Agente não encontrado'));
         }
 
-        const casoAtualizado = repository.atualizarCaso(id, titulo, descricao, status, agente_id)
-
-        return res.status(200).json(casoAtualizado)
+        const casoAtualizado = repository.atualizarCaso(id, titulo, descricao, status, agente_id);
+        return res.status(200).json(casoAtualizado);
     }
     catch (error) {
-        next(error)
+        next(error);
     }
-}
+};
+
 
 const atualizarCasoParcialmente = (req, res, next) => {
     try {
@@ -173,23 +172,26 @@ const atualizarCasoParcialmente = (req, res, next) => {
 
         let { titulo, descricao, status, agente_id } = req.body;
 
-        if (titulo && titulo === "") {
-            return next(new APIError(400, `Título não pode ser vazio`))
+        if (titulo !== undefined && (typeof titulo !== 'string' || titulo.trim() === '')) {
+            return next(new APIError(400, `Título deve ser uma string não vazia`));
         }
 
-        if (descricao && descricao === "") {
-            return next(new APIError(400, `Descrição não pode ser vazia`))
+        if (descricao !== undefined && (typeof descricao !== 'string' || descricao.trim() === '')) {
+            return next(new APIError(400, `Descrição deve ser uma string não vazia`));
         }
 
-        if (status && status !== "aberto" && status !== "solucionado") {
-            return next(new APIError(400, `Status deve ser 'aberto' ou 'solucionado'`))
+        if (status !== undefined) {
+            if (typeof status !== 'string' || status.trim() === "") {
+                return next(new APIError(400, `Status deve ser uma string não vazia`));
+            }
+
+            if (status !== "aberto" && status !== "solucionado") {
+                return next(new APIError(400, `Status deve ser 'aberto' ou 'solucionado'`));
+            }
         }
 
-        if (status && status === "") {
-            return next(new APIError(400, `Status não pode ser vazio`))
-        }
 
-        if (agente_id && !agentesRepository.findById(agente_id)) {
+        if (agente_id !== undefined && !agentesRepository.findById(agente_id)) {
             return next(new APIError(404, 'Agente não encontrado'))
         }
 

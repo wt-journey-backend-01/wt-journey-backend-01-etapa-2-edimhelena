@@ -76,15 +76,15 @@ const atualizarAgente = (req, res, next) => {
             return next(new APIError(400, "Você não pode alterar o campo 'id'."));
         }
 
-        if (!nome || nome === "") {
+        if (nome === undefined || nome === "") {
             return next(new APIError(400, `Nome é obrigatório`))
         }
 
-        if (!dataDeIncorporacao || dataDeIncorporacao === "") {
+        if (dataDeIncorporacao === undefined || dataDeIncorporacao === "") {
             return next(new APIError(400, `A data de incorporação é obrigatória`))
         }
 
-        if (!cargo || cargo === "") {
+        if (cargo === undefined || cargo === "") {
             return next(new APIError(400, `Cargo é obrigatório`))
         }
 
@@ -129,26 +129,26 @@ const atualizarAgenteParcialmente = (req, res, next) => {
             return next(new APIError(404, `Agente ${id} não encontrado`))
         }
 
-        if(nome && nome === ""){
-            return next(new APIError(400, `Nome não pode ser vazio`))
+        if (nome !== undefined && (typeof nome !== 'string' || nome.trim() === "")) {
+            return next(new APIError(400, `Nome deve ser uma string não vazia`));
         }
 
-        if(cargo && cargo === ""){
-            return next(new APIError(400, `Cargo não pode ser vazio`))
+        if (cargo !== undefined && (typeof cargo !== 'string' || cargo.trim() === "")) {
+            return next(new APIError(400, `Cargo deve ser uma string não vazia`));
         }
 
-        if (dataDeIncorporacao) {
-            if(dataDeIncorporacao === ""){
-                return next(new APIError(400, `Data de incorporação não pode ser vazia`))
+        if (dataDeIncorporacao !== undefined) {
+            if (typeof dataDeIncorporacao !== 'string' || dataDeIncorporacao.trim() === "") {
+                return next(new APIError(400, `Data de incorporação deve ser uma string no formato YYYY-MM-DD`));
             }
 
-            const formatoValido = /^\d{4}-\d{2}-\d{2}$/.test(dataDeIncorporacao)
+            const formatoValido = /^\d{4}-\d{2}-\d{2}$/.test(dataDeIncorporacao);
             if (!formatoValido) {
-                return next(new APIError(400, `Data de incorporação deve estar no formato YYYY-MM-DD`))
+                return next(new APIError(400, `Data de incorporação deve estar no formato YYYY-MM-DD`));
             }
 
             const now = new Date();
-            const dataToDate = new Date(dataDeIncorporacao)
+            const dataToDate = new Date(dataDeIncorporacao);
 
             if (dataToDate > now) {
                 return next(new APIError(400, "A data de incorporação deve ser uma data válida."));
