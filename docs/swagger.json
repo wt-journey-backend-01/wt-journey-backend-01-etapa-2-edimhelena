@@ -2,7 +2,7 @@
     "openapi": "3.0.0",
     "info": {
         "title": "API para o Departamento de Polícia",
-        "description": "Essa é uma API de um departamento de poícia que permite o gerenciamento de agentes e casos policiais fictícios, com validações, tratamento de erros e dados armazenados em memória (utilizando arrays).",
+        "description": "Essa é uma API de um departamento de polícia que permite o gerenciamento de agentes e casos policiais fictícios, com validações, tratamento de erros e dados armazenados em memória (utilizando arrays).",
         "version": "1.0.0",
         "contact": {
             "name": "Helena Edim",
@@ -19,7 +19,6 @@
         "/casos": {
             "get": {
                 "summary": "Retorna todos os casos",
-                "description": "Essa rota será reponsável por retornar todos os casos",
                 "tags": [
                     "Casos"
                 ],
@@ -30,22 +29,9 @@
                             "application/json": {
                                 "schema": {
                                     "type": "array",
-                                    "example": [
-                                        {
-                                            "id": "1",
-                                            "titulo": "Caso 1",
-                                            "descricao": "Descrição do caso 1",
-                                            "status": "aberto",
-                                            "agente_id": "1"
-                                        },
-                                        {
-                                            "id": "2",
-                                            "titulo": "Caso 2",
-                                            "descricao": "Descrição do caso 2",
-                                            "status": "solucionado",
-                                            "agente_id": "2"
-                                        }
-                                    ]
+                                    "items": {
+                                        "$ref": "#/components/schemas/Caso"
+                                    }
                                 }
                             }
                         }
@@ -54,24 +40,24 @@
             },
             "post": {
                 "summary": "Cria um caso",
-                "description": "Essa rota será reponsável por criar um caso",
                 "tags": [
                     "Casos"
                 ],
                 "requestBody": {
+                    "required": true,
                     "content": {
                         "application/json": {
                             "schema": {
                                 "$ref": "#/components/schemas/Caso"
-                            }
-                        },
-                        "examples": {
-                            "caso": {
-                                "value": {
-                                    "titulo": "Caso 1",
-                                    "descricao": "Descrição do caso 1",
-                                    "status": "aberto",
-                                    "agente_id": "1"
+                            },
+                            "examples": {
+                                "caso": {
+                                    "value": {
+                                        "titulo": "Caso 1",
+                                        "descricao": "Descrição do caso 1",
+                                        "status": "aberto",
+                                        "agente_id": "1"
+                                    }
                                 }
                             }
                         }
@@ -93,7 +79,6 @@
         "/casos/{id}": {
             "get": {
                 "summary": "Retorna o caso com o determinado ID",
-                "description": "Essa rota será reponsável por retornar um caso específico",
                 "tags": [
                     "Casos"
                 ],
@@ -113,14 +98,7 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "type": "object",
-                                    "example": {
-                                        "id": "1",
-                                        "titulo": "Caso 1",
-                                        "descricao": "Descrição do caso 1",
-                                        "status": "aberto",
-                                        "agente_id": "1"
-                                    }
+                                    "$ref": "#/components/schemas/Caso"
                                 }
                             }
                         }
@@ -132,7 +110,6 @@
             },
             "put": {
                 "summary": "Atualiza completamente um caso de acordo com o id passado na rota",
-                "description": "Essa rota será reponsável por atualizar completamente um caso de acordo com o id passado na rota",
                 "tags": [
                     "Casos"
                 ],
@@ -147,20 +124,11 @@
                     }
                 ],
                 "requestBody": {
+                    "required": true,
                     "content": {
                         "application/json": {
                             "schema": {
                                 "$ref": "#/components/schemas/Caso"
-                            }
-                        },
-                        "examples": {
-                            "caso": {
-                                "value": {
-                                    "titulo": "Caso 1 atualizado",
-                                    "descricao": "Descrição do caso 1 atualizada",
-                                    "status": "solucionado",
-                                    "agente_id": "1"
-                                }
                             }
                         }
                     }
@@ -171,28 +139,21 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "type": "object",
-                                    "example": {
-                                        "titulo": "Caso 1 atualizado",
-                                        "descricao": "Descrição do caso 1 atualizada",
-                                        "status": "solucionado",
-                                        "agente_id": "1"
-                                    }
+                                    "$ref": "#/components/schemas/Caso"
                                 }
                             }
                         }
                     },
-                    "404": {
-                        "description": "Caso ou agente não encontrado"
-                    },
                     "400": {
                         "description": "Dados incorretos ou incompletos"
+                    },
+                    "404": {
+                        "description": "Caso ou agente não encontrado"
                     }
                 }
             },
             "patch": {
                 "summary": "Atualiza parcialmente um caso",
-                "description": "Essa rota permite atualizar apenas alguns campos de um caso, de acordo com o ID passado na URL.",
                 "tags": [
                     "Casos"
                 ],
@@ -270,7 +231,6 @@
             },
             "delete": {
                 "summary": "Deleta caso",
-                "description": "Essa rota permite deletar um caso de acordo com o id passado na URL",
                 "tags": [
                     "Casos"
                 ],
@@ -285,11 +245,328 @@
                     }
                 ],
                 "responses": {
-                    "404": {
-                        "description": "Caso não encontrado"
-                    },
                     "204": {
                         "description": "Caso deletado com sucesso"
+                    },
+                    "404": {
+                        "description": "Caso não encontrado"
+                    }
+                }
+            }
+        },
+        "/casos/agente": {
+            "get": {
+                "summary": "Retorna casos por agente",
+                "tags": [
+                    "Casos"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Casos do agente",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/Caso"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Esse agente não possui nenhum caso registrado"
+                    }
+                }
+            }
+        },
+        "/casos/status": {
+            "get": {
+                "summary": "Busca casos pelo status",
+                "description": "Retorna todos os casos que possuem o status informado",
+                "tags": [
+                    "Casos"
+                ],
+                "parameters": [
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "aberto",
+                                "solucionado"
+                            ]
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Casos filtrados por status",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/Caso"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Status inválido"
+                    }
+                }
+            }
+        },
+        "/agentes": {
+            "get": {
+                "summary": "Retorna todos os agentes",
+                "tags": [
+                    "Agentes"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Retorna todos os agentes",
+                        "content": {
+                            "application/json": {
+                                "type": "array",
+                                "example": [
+                                    {
+                                        "id": "401bccf5-cf9e-489d-8412-446cd169a0f1",
+                                        "nome": "Agente 1",
+                                        "dataDeIncorporacao": "1992-10-04",
+                                        "cargo": "delegado"
+                                    },
+                                    {
+                                        "id": "401bccf5-cf9e-489d-8412-446cd169a0f2",
+                                        "nome": "Agente 2",
+                                        "dataDeIncorporacao": "2000-12-03",
+                                        "cargo": "policial"
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "summary": "Cria um agente",
+                "tags": [
+                    "Agentes"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/Agente"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Agente criado com sucesso"
+                    },
+                    "400": {
+                        "description": "Dados incorretos ou incompletos"
+                    }
+                }
+            }
+        },
+        "/agentes/{id}": {
+            "get": {
+                "summary": "Retorna o agente com o determinado ID",
+                "tags": [
+                    "Agentes"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Agente retornado com sucesso",
+                        "content": {
+                            "application/json": {
+                                "type": "object",
+                                "example": {
+                                    "id": "401bccf5-cf9e-489d-8412-446cd169a0f1",
+                                    "nome": "Agente 1",
+                                    "dataDeIncorporacao": "1992-10-04",
+                                    "cargo": "delegado"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Agente não encontrado"
+                    }
+                }
+            },
+            "put": {
+                "summary": "Atualiza completamente um agente de acordo com o id passado na rota",
+                "tags": [
+                    "Agentes"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/Agente"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Agente atualizado com sucesso",
+                        "content": {
+                            "application/json": {
+                                "type": "object",
+                                "example": {
+                                    "id": "401bccf5-cf9e-489d-8412-446cd169a0f1",
+                                    "nome": "Agente 1 atualizado",
+                                    "dataDeIncorporacao": "1992-10-03",
+                                    "cargo": "policial"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Dados incorretos ou incompletos"
+                    },
+                    "404": {
+                        "description": "Caso ou agente não encontrado"
+                    }
+                }
+            },
+            "patch": {
+                "summary": "Atualiza parcialmente um agente",
+                "tags": [
+                    "Agentes"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "nome": {
+                                        "type": "string"
+                                    },
+                                    "dataDeIncorporacao": {
+                                        "type": "string",
+                                        "format": "date"
+                                    },
+                                    "cargo": {
+                                        "type": "string"
+                                    }
+                                }
+                            },
+                            "examples": {
+                                "atualizar_nome": {
+                                    "summary": "Atualizar apenas o nome",
+                                    "value": {
+                                        "nome": "Novo nome"
+                                    }
+                                },
+                                "atualizar_data_e_cargo": {
+                                    "summary": "Atualizar data de incorporação e cargo",
+                                    "value": {
+                                        "dataDeIncorporacao": "Nova data (formato YYYY-MM-DD)",
+                                        "cargo": "Novo cargo do agente"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Agente atualizado com sucesso",
+                        "content": {
+                            "application/json": {
+                                "type": "object",
+                                "example": {
+                                    "id": "401bccf5-cf9e-489d-8412-446cd169a0f1",
+                                    "nome": "Agente 1 atualizado",
+                                    "dataDeIncorporacao": "1992-10-03",
+                                    "cargo": "policial"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Requisição inválida"
+                    },
+                    "404": {
+                        "description": "Agente não encontrado"
+                    }
+                }
+            },
+            "delete": {
+                "summary": "Deleta agente",
+                "tags": [
+                    "Agentes"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Agente deletado com sucesso"
+                    },
+                    "404": {
+                        "description": "Agente não encontrado"
                     }
                 }
             }
@@ -297,7 +574,6 @@
         "/docs-swagger": {
             "get": {
                 "summary": "Retorna a documentação da API",
-                "description": "Essa rota será reponsável por retornar a documentação em json da API feita pelo swagger",
                 "tags": [
                     "Documentação"
                 ],
@@ -305,7 +581,11 @@
                     "200": {
                         "description": "Retorna a documentação",
                         "content": {
-                            "text/json": {}
+                            "application/json": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            }
                         }
                     }
                 }
@@ -339,6 +619,26 @@
                     "agente_id": {
                         "type": "string",
                         "format": "uuid"
+                    }
+                }
+            },
+            "Agente": {
+                "type": "object",
+                "required": [
+                    "nome",
+                    "dataDeIncorporacao",
+                    "cargo"
+                ],
+                "properties": {
+                    "nome": {
+                        "type": "string"
+                    },
+                    "dataDeIncorporacao": {
+                        "type": "string",
+                        "format": "date"
+                    },
+                    "cargo": {
+                        "type": "string"
                     }
                 }
             }
