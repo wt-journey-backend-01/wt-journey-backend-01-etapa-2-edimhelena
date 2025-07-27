@@ -1,156 +1,217 @@
 <sup>Esse é um feedback gerado por IA, ele pode conter erros.</sup>
 
-Você tem 5 créditos restantes para usar o sistema de feedback AI.
+Você tem 4 créditos restantes para usar o sistema de feedback AI.
 
 # Feedback para edimhelena:
 
 Nota final: **100.0/100**
 
-Olá, edimhelena! 👋✨
+Olá, edimhelena! 👋🚀
 
-Primeiramente, parabéns pelo seu trabalho! 🎉 Você entregou uma API muito bem estruturada, que cobre todos os métodos HTTP para os recursos `/agentes` e `/casos`, além de implementar validações robustas e tratamento de erros com mensagens claras. Seu uso das camadas de controllers, repositories e rotas está impecável, refletindo uma arquitetura modular que facilita a manutenção e a escalabilidade do projeto. Além disso, você também mandou muito bem nos bônus de filtragem simples — isso mostra que você foi além do básico e buscou oferecer funcionalidades extras para facilitar o uso da API. 👏👏
-
----
-
-## O que está brilhando no seu código? 🌟
-
-- **Organização do projeto**: Seu código está muito bem dividido em pastas e arquivos (`controllers`, `repositories`, `routes`, `utils`), seguindo a arquitetura MVC que é padrão para projetos Node.js com Express. Isso deixa tudo muito claro e fácil de entender.
-  
-- **Validações detalhadas**: Você fez validações cuidadosas para os campos obrigatórios, formatos de datas e status permitidos, tanto para criação quanto para atualização (com PUT e PATCH). Isso é essencial para garantir a integridade dos dados e evitar bugs futuros.
-
-- **Tratamento de erros personalizado**: A criação da classe `APIError` e o uso consistente do middleware `errorHandler` para capturar e responder com status e mensagens adequadas é um ponto forte no seu projeto.
-
-- **Filtros simples implementados**: O endpoint `/casos` permite filtrar por `status` e `agente_id`, retornando respostas apropriadas quando não encontra resultados. Isso enriquece a API e mostra seu cuidado com a experiência do usuário.
+Primeiramente, parabéns pelo seu esforço e pela entrega impecável da API para o Departamento de Polícia! 🎉 Você implementou com muita qualidade os endpoints para os recursos `/agentes` e `/casos`, cuidou da validação dos dados, do tratamento de erros e ainda foi além ao implementar filtros para os casos — isso mostra um domínio muito bom do Express.js e da arquitetura modular. Mandou muito bem! 👏👏
 
 ---
 
-## Pontos para você focar e aprimorar 🕵️‍♂️🔍
+## O que está brilhando no seu código ✨
 
-### 1. Filtros e buscas mais avançadas para agentes e casos (bônus que ainda não estão completos)
+- **Arquitetura modular bem organizada:** Você separou direitinho as rotas, controllers e repositories, exatamente como esperado. Isso deixa o projeto limpo, fácil de manter e escalar.
+- **Validações robustas:** Nos controllers, você fez um trabalho cuidadoso validando os campos obrigatórios, formatos e até datas válidas. Isso é fundamental para uma API confiável.
+- **Tratamento de erros consistente:** Criar sua própria classe `APIError` e usar o middleware `errorHandler` mostra maturidade no tratamento de exceções — ótima prática!
+- **Filtros nos casos:** Você implementou filtros por `status` e `agente_id` no endpoint `/casos`, o que é um bônus muito legal para a sua API.
+- **Status HTTP corretos:** Você usou os códigos certos (200, 201, 204, 400, 404) em todas as respostas, o que é essencial para APIs RESTful.
 
-Percebi que alguns bônus importantes ainda não foram implementados, como:
+---
 
-- **Filtro de agentes por data de incorporação com ordenação crescente e decrescente**.
-- **Filtro de casos por palavras-chave no título e/ou descrição**.
-- **Busca do agente responsável por um caso específico**.
-- **Mensagens de erro customizadas para argumentos inválidos em filtros**.
+## Pontos para você focar e aprimorar ainda mais 🔍
 
-Essas funcionalidades exigem que você adicione lógica extra nos controllers e talvez novos endpoints para tratar query params específicos. Por exemplo, para filtrar agentes por data, você pode receber algo como `?dataDeIncorporacao=YYYY-MM-DD&sort=asc` e aplicar um filtro e ordenação no array de agentes.
+Eu notei que alguns dos filtros e funcionalidades bônus ainda não estão implementados, e vou te ajudar a entender o que pode ser feito para destravar esses pontos e deixar sua API ainda mais completa.
 
-Aqui está um exemplo simplificado de como você poderia implementar a ordenação por data de incorporação:
+### 1. Filtro para buscar o agente responsável por um caso
+
+Você já tem o endpoint `/casos` que retorna os casos, e cada caso tem o campo `agente_id`. Mas não vi uma rota ou funcionalidade que permita, a partir de um caso, obter os dados completos do agente responsável diretamente.
+
+📌 **Por que isso é importante?**
+
+Essa funcionalidade melhora a usabilidade da API, permitindo que o cliente consulte o agente responsável sem precisar fazer duas requisições separadas.
+
+📌 **Como implementar?**
+
+Você pode criar um endpoint que, dado o ID de um caso, retorna também os dados do agente responsável. Por exemplo:
 
 ```js
-const getAgentes = (req, res, next) => {
-  try {
-    let agentes = agentesRepository.findAll();
-    const { dataDeIncorporacao, sort } = req.query;
+// Em casosController.js
+const getCasoComAgente = (req, res, next) => {
+    try {
+        const id = req.params.id;
+        const caso = repository.findById(id);
+        if (!caso) {
+            return next(new APIError(404, `O caso ${id} não existe`));
+        }
 
-    if (dataDeIncorporacao) {
-      agentes = agentes.filter(a => a.dataDeIncorporacao === dataDeIncorporacao);
+        const agente = agentesRepository.findById(caso.agente_id);
+        if (!agente) {
+            return next(new APIError(404, `Agente responsável não encontrado`));
+        }
+
+        return res.status(200).json({ caso, agente });
+    } catch (error) {
+        next(error);
     }
-
-    if (sort === 'asc') {
-      agentes.sort((a, b) => new Date(a.dataDeIncorporacao) - new Date(b.dataDeIncorporacao));
-    } else if (sort === 'desc') {
-      agentes.sort((a, b) => new Date(b.dataDeIncorporacao) - new Date(a.dataDeIncorporacao));
-    }
-
-    return res.status(200).json(agentes);
-  } catch (error) {
-    next(error);
-  }
 };
 ```
 
-Para buscar palavras-chave em casos, você pode usar o método `filter` com `includes` para verificar se o título ou descrição contém a palavra:
+E registrar a rota correspondente em `casosRoutes.js`:
+
+```js
+router.get('/:id/com-agente', controller.getCasoComAgente);
+```
+
+---
+
+### 2. Filtro por palavras-chave no título e/ou descrição dos casos
+
+Atualmente, seu endpoint `/casos` filtra por `status` e `agente_id`, mas não há busca por palavras-chave no título ou na descrição.
+
+📌 **Por que isso é útil?**
+
+Permite ao usuário da API buscar casos com base em termos específicos, facilitando encontrar informações importantes.
+
+📌 **Como implementar?**
+
+Você pode adicionar um parâmetro de query, por exemplo `keyword`, e filtrar os casos que contenham essa palavra no título ou na descrição, ignorando maiúsculas/minúsculas:
 
 ```js
 const getCasos = (req, res, next) => {
-  try {
-    let casos = repository.findAll();
-    const { keyword } = req.query;
+    try {
+        let casos = repository.findAll();
 
-    if (keyword) {
-      const lowerKeyword = keyword.toLowerCase();
-      casos = casos.filter(c => 
-        c.titulo.toLowerCase().includes(lowerKeyword) || 
-        c.descricao.toLowerCase().includes(lowerKeyword)
-      );
+        const { agente_id, status, keyword } = req.query;
+
+        if (agente_id) {
+            casos = casos.filter(c => c.agente_id === agente_id);
+            if (casos.length === 0) {
+                return next(new APIError(404, 'Esse agente não possui nenhum caso registrado.'));
+            }
+        }
+
+        if (status) {
+            if (status !== 'aberto' && status !== 'solucionado') {
+                return next(new APIError(400, "O campo 'status' pode ser somente 'aberto' ou 'solucionado'."));
+            }
+            casos = casos.filter(c => c.status === status);
+            if (casos.length === 0) {
+                return next(new APIError(404, `Nenhum caso com status '${status}' foi encontrado.`));
+            }
+        }
+
+        if (keyword) {
+            const lowerKeyword = keyword.toLowerCase();
+            casos = casos.filter(c =>
+                c.titulo.toLowerCase().includes(lowerKeyword) ||
+                c.descricao.toLowerCase().includes(lowerKeyword)
+            );
+            if (casos.length === 0) {
+                return next(new APIError(404, `Nenhum caso contendo a palavra-chave '${keyword}' foi encontrado.`));
+            }
+        }
+
+        return res.status(200).json(casos);
+    } catch (error) {
+        next(error);
     }
-
-    return res.status(200).json(casos);
-  } catch (error) {
-    next(error);
-  }
 };
 ```
 
-Essas melhorias vão deixar sua API muito mais poderosa e flexível! 💪
+Assim, você amplia muito a utilidade do seu endpoint.
 
 ---
 
-### 2. Mensagens de erro customizadas para filtros inválidos
+### 3. Filtragem e ordenação dos agentes por data de incorporação
 
-No momento, seu tratamento de erros para filtros simples está muito bom, mas os erros para argumentos inválidos em filtros ainda podem ser melhorados para serem mais específicos e amigáveis.
+Eu percebi que ainda não há filtros para agentes, especialmente para ordenar por `dataDeIncorporacao` em ordem crescente ou decrescente, o que foi um requisito bônus.
 
-Por exemplo, se o usuário passar um status inválido, você já retorna um erro 400 explicativo:
+📌 **Por que isso?**
+
+Permite que o usuário da API visualize os agentes ordenados, por exemplo, do mais antigo para o mais novo na corporação, ou vice-versa.
+
+📌 **Como implementar?**
+
+No controller de agentes, você pode capturar query params como `sort` e aplicar a ordenação:
 
 ```js
-if (status !== 'aberto' && status !== 'solucionado') {
-  return next(new APIError(400, "O campo 'status' pode ser somente 'aberto' ou 'solucionado'."));
-}
+const getAgentes = (req, res, next) => {
+    try {
+        let agentes = agentesRepository.findAll();
+
+        const { sort } = req.query;
+
+        if (sort) {
+            if (sort !== 'asc' && sort !== 'desc') {
+                return next(new APIError(400, "O parâmetro 'sort' deve ser 'asc' ou 'desc'."));
+            }
+
+            agentes = agentes.sort((a, b) => {
+                const dataA = new Date(a.dataDeIncorporacao);
+                const dataB = new Date(b.dataDeIncorporacao);
+
+                if (sort === 'asc') {
+                    return dataA - dataB;
+                } else {
+                    return dataB - dataA;
+                }
+            });
+        }
+
+        return res.status(200).json(agentes);
+    } catch (error) {
+        next(error);
+    }
+};
 ```
 
-Mas para os filtros avançados que ainda vão ser implementados, é importante seguir esse padrão, criando mensagens claras para cada parâmetro inválido.
+E no arquivo `agentesRoutes.js` o endpoint já está pronto para receber essa query.
 
 ---
 
-### 3. Pequeno ajuste na nomenclatura e consistência dos métodos em repositories
+### 4. Mensagens de erro customizadas para argumentos inválidos
 
-No arquivo `casosRepository.js`, você tem uma função chamada `deleteCaso` para deletar um caso, mas no controller você chama `repository.deleteCaso(indexCaso)` — tudo certo, só uma dica para manter um padrão consistente: prefira usar sempre `deletarCaso` para ficar alinhado com o português usado em `agentesRepository.js` (onde você usa `deletarAgente`).
+Embora você já tenha um tratamento de erros muito bom com a classe `APIError`, algumas mensagens podem ser ainda mais específicas e amigáveis, especialmente para os filtros e parâmetros opcionais.
 
-Isso ajuda a manter seu código mais legível e consistente, facilitando para você e outros desenvolvedores que venham a trabalhar no projeto.
+Por exemplo, se alguém passar um parâmetro inválido no filtro de agentes ou casos, você pode detalhar melhor o erro para facilitar o entendimento do cliente da API.
 
 ---
 
 ## Sobre a estrutura do projeto 🗂️
 
-Sua estrutura está perfeita e alinhada com o esperado para o desafio! Isso é fundamental para manter a organização e permitir que seu código escale bem. Parabéns por manter essa disciplina! 🎯
+Sua estrutura de pastas e arquivos está perfeita e segue o padrão esperado, o que facilita muito a manutenção e entendimento do projeto. Isso é essencial para projetos reais e mostra profissionalismo! 👏
 
 ---
 
-## Recomendações de estudo para você continuar brilhando 💡
+## Recomendações de estudo para você continuar brilhando ✨
 
-- Para aprofundar na arquitetura MVC e organização modular, recomendo este vídeo que explica muito bem como estruturar projetos Node.js com Express:  
-  https://youtu.be/bGN_xNc4A1k?si=Nj38J_8RpgsdQ-QH
+- Para aprofundar ainda mais no **Express.js, rotas e arquitetura modular**, recomendo este vídeo super didático:  
+  https://youtu.be/bGN_xNc4A1k?si=Nj38J_8RpgsdQ-QH  
 
-- Para entender melhor como manipular arrays e fazer filtros e ordenações em JavaScript, veja este conteúdo:  
-  https://youtu.be/glSgUKA5LjE?si=t9G2NsC8InYAU9cI
+- Para entender melhor como fazer **validação e tratamento de erros personalizados**, este conteúdo vai ajudar bastante:  
+  https://youtu.be/yNDCRAz7CM8?si=Lh5u3j27j_a4w3A_  
 
-- Para aprimorar a validação de dados e tratamento de erros em APIs, este vídeo é sensacional:  
-  https://youtu.be/yNDCRAz7CM8?si=Lh5u3j27j_a4w3A_
-
-- E para consolidar seu conhecimento sobre rotas e middlewares no Express, confira a documentação oficial:  
-  https://expressjs.com/pt-br/guide/routing.html
+- Para dominar a manipulação de arrays e filtros no JavaScript (fundamental para os filtros de sua API):  
+  https://youtu.be/glSgUKA5LjE?si=t9G2NsC8InYAU9cI  
 
 ---
 
-## Resumo rápido para você focar 🚦
+## Resumo rápido para focar nos próximos passos 📝
 
-- ✅ Parabéns pela implementação completa dos endpoints básicos e validações sólidas!
-- 🔜 Implemente filtros avançados para agentes (por data de incorporação com ordenação) e para casos (por palavras-chave).
-- 🔜 Adicione busca do agente responsável por um caso, como filtro extra.
-- 🔜 Melhore as mensagens de erro customizadas para filtros inválidos, mantendo a clareza.
-- 🔄 Mantenha a consistência na nomenclatura dos métodos dos repositories.
-- 📚 Continue estudando manipulação de arrays, arquitetura MVC e tratamento de erros para evoluir ainda mais.
+- [ ] Implemente a busca do agente responsável junto com os dados do caso (endpoint `/casos/:id/com-agente` ou similar).  
+- [ ] Adicione filtro por palavra-chave no título e descrição dos casos no endpoint `/casos`.  
+- [ ] Implemente ordenação crescente e decrescente por `dataDeIncorporacao` no endpoint `/agentes`.  
+- [ ] Refine as mensagens de erro para filtros e parâmetros inválidos, tornando-as mais claras e específicas.  
 
 ---
 
-edimhelena, você está no caminho certo e seu código mostra muito cuidado e dedicação! 👏 Continue explorando essas funcionalidades extras e polindo os detalhes, que sua API vai ficar cada vez mais completa e profissional. Estou torcendo pelo seu sucesso! 🚀✨
+Edimhelena, você está no caminho certo e seu código mostra muita dedicação e atenção aos detalhes! 🚀 Continue explorando esses aprimoramentos para deixar sua API ainda mais completa e profissional. Se precisar, volte aos recursos que recomendei e não hesite em perguntar quando bater aquela dúvida. Estou aqui para te ajudar! 😉
 
-Se precisar de ajuda para implementar algum filtro ou entender melhor algum conceito, é só chamar! 😉
-
-Um abraço de Code Buddy! 🤖💙
+Bons códigos e até a próxima! 👩‍💻👨‍💻✨
 
 > Caso queira tirar uma dúvida específica, entre em contato com o Chapter no nosso [discord](https://discord.gg/DryuHVnz).
 
